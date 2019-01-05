@@ -1,0 +1,14 @@
+*.egg
+*.egg-info
+*.pyc
+.coverage
+.tox
+__pycache__
+build
+dist
+docs/_build/
+env
+venv
+env*
+fabfile*
+htmlcov
