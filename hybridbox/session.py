@@ -12,6 +12,20 @@ import json
 
 
 class Session(object):
+    """The origin of everything you want to do with the hybridbox-api.
+
+    Configuration can be set with keyword arguments when initializing
+    :py:class:`Session`.
+
+    :type username: str
+    :param username: The login username default: "admin"
+
+    :type password: str
+    :param password: The login password default: ""
+
+    :type ip: str
+    :param ip: The IP-address of the Router interface default: "10.0.0.138"
+    """
     def __init__(self, username="admin", password="", ip="10.0.0.138"):
         self.USERNAME = username
         self.PASSWORD = password
@@ -21,6 +35,10 @@ class Session(object):
         self.csrf_token = ""
 
     def _encrypt_password(self):
+        """ Encrypting the password with the username , csrf_param and csrf_token.
+
+        :return: Encrypted password
+        """
         encrypted_password = self.USERNAME.encode("UTF-8") \
                              + base64.b64encode(hashlib.sha256(self.PASSWORD.encode("UTF-8"))
                                                 .hexdigest().encode("UTF-8")) \
@@ -30,20 +48,35 @@ class Session(object):
         return encrypted_password
 
     def _set_csrf(self, page):
+        """Every time you send a request to the Routers page the csrf-creds change so you have to set
+        them on every response. The reason why I'm not only using json is because sometimes we have to
+        filter the csrf-creds form an html page not an json response.
+
+        :param page: A Json object with the last responses csrf-creds or the whole response html.
+        """
         if type(page) == dict:
             self.csrf_param = page["csrf_param"]
             self.csrf_token = page["csrf_token"]
         elif page is not None:
             self.csrf_param = re.search('(.*csrf_param".{1,9})"(\w{32})"', page.text).group(2)
             self.csrf_token = re.search('(.*csrf_token".{1,9})"(\w{32})"', page.text).group(2)
-        return 0
 
     @staticmethod
     def _get_json(given_string):
+        """Filter and return the json from the response string.
+
+        :param given_string: Response string
+        :return: Json object
+        """
         json_string = re.search('(.*/\*)(.*)(\*/)', given_string).group(2)
         return json.loads(json_string)
 
     def _cleanup(self, r):
+        """Setting the last responses csrf-creds and returning the error code
+
+        :param r: Last response.
+        :return: Error code of the last response.
+        """
         try:
             json_response = self._get_json(r.text)
             self._set_csrf(json_response)
@@ -52,6 +85,10 @@ class Session(object):
             print("error: " + repr(error))
 
     def login(self):
+        """Initializes an authentication.
+
+        :returns: The session. This is useful for jQuery-like command
+        """
         self.session = requests.Session()
         page = self.session.get("http://" + self.IP + "/html/index.html")
         if page.ok:
@@ -71,6 +108,10 @@ class Session(object):
         raise Exception("connection failed")
 
     def logout(self):
+        """Log out of session
+
+        :returns: The session. This is useful for jQuery-like command
+        """
         csrf = dict(csrf_param=self.csrf_param, csrf_token=self.csrf_token)
         r = self.session.post("http://" + self.IP + "/api/system/user_logout", json=csrf)
         self.csrf_param = ""
@@ -79,6 +120,10 @@ class Session(object):
         return self
 
     def turn5goff(self):
+        """Disables the 5G wifi
+
+        :return: Error code of the response.
+        """
         csrf = dict(csrf_param=self.csrf_param, csrf_token=self.csrf_token)
         config5g = dict(enable="false", ID="InternetGatewayDevice.X_Config.Wifi.Radio.2.")
         data = dict(config5g=config5g)
@@ -88,6 +133,10 @@ class Session(object):
         return self._cleanup(r)
 
     def turn5gon(self):
+        """Enables the 5G wifi
+
+        :return: Error code of the response.
+        """
         csrf = dict(csrf_param=self.csrf_param, csrf_token=self.csrf_token)
         config5g = dict(enable="true", ID="InternetGatewayDevice.X_Config.Wifi.Radio.2.")
         data = dict(config5g=config5g)
@@ -97,6 +146,10 @@ class Session(object):
         return self._cleanup(r)
 
     def turn2goff(self):
+        """Disables the 2G wifi
+
+        :return: Error code of the response.
+        """
         csrf = dict(csrf_param=self.csrf_param, csrf_token=self.csrf_token)
         config2g = dict(enable="false", ID="InternetGatewayDevice.X_Config.Wifi.Radio.1.")
         data = dict(config5g=config2g)
@@ -106,6 +159,10 @@ class Session(object):
         return self._cleanup(r)
 
     def turn2gon(self):
+        """Enables the 2G wifi
+
+        :return: Error code of the response.
+        """
         csrf = dict(csrf_param=self.csrf_param, csrf_token=self.csrf_token)
         config2g = dict(enable="true", ID="InternetGatewayDevice.X_Config.Wifi.Radio.1.")
         data = dict(config5g=config2g)
