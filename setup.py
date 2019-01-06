@@ -17,7 +17,7 @@ setup(
     author_email='e48e13207341b6bffb7fb1622282247b@protonmail.com',
     packages=find_packages(),
     include_package_data=True,
-    url='https://github.com/python-webuntis/python-webuntis',
+    url='https://github.com/2xki/hybridbox-api',
     license='new-style BSD',
     description='Bindings for Hybridbox API',
     long_description=open('README.rst').read(),
