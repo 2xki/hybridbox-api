@@ -21,6 +21,10 @@ Bindings for hybridbox-api
     myRouter.turn2goff()
     myRouter.logout()
 
+::
+
+    myRouter.rebooot() # note that reboot logs you out
+
 
 Installation
 ============

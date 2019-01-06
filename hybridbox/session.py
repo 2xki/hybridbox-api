@@ -50,7 +50,7 @@ class Session(object):
     def _set_csrf(self, page):
         """Every time you send a request to the Routers page the csrf-creds change so you have to set
         them on every response. The reason why I'm not only using json is because sometimes we have to
-        filter the csrf-creds form an html page not an json response.
+        filter the csrf-creds form an html.
 
         :param page: A Json object with the last responses csrf-creds or the whole response html.
         """
@@ -90,22 +90,25 @@ class Session(object):
         :returns: The session. This is useful for jQuery-like command
         """
         self.session = requests.Session()
-        page = self.session.get("http://" + self.IP + "/html/index.html")
-        if page.ok:
-            self._set_csrf(page)
-            encrypted_password = self._encrypt_password()
-            csrf = dict(csrf_param=self.csrf_param, csrf_token=self.csrf_token)
-            data = dict(UserName=self.USERNAME, Password=encrypted_password, LoginFlag=1)
-            login_data = dict(csrf=csrf, data=data)
-            r = self.session.post("http://" + self.IP + "/api/system/user_login", json=login_data)
-            json_response = self._get_json(r.text)
+        try:
+            page = self.session.get("http://" + self.IP + "/html/index.html")
+            if page.ok:
+                self._set_csrf(page)
+                encrypted_password = self._encrypt_password()
+                csrf = dict(csrf_param=self.csrf_param, csrf_token=self.csrf_token)
+                data = dict(UserName=self.USERNAME, Password=encrypted_password, LoginFlag=1)
+                login_data = dict(csrf=csrf, data=data)
 
-            if json_response["errorCategory"] == "ok":
-                self._set_csrf(json_response)
-            else:
-                raise Exception(json_response["errorCategory"])
-            return self
-        raise Exception("connection failed")
+                r = self.session.post("http://" + self.IP + "/api/system/user_login", json=login_data)
+                json_response = self._get_json(r.text)
+
+                if json_response["errorCategory"] == "ok":
+                    self._set_csrf(json_response)
+                else:
+                    raise Exception(json_response["errorCategory"])
+                return self
+        except Exception as error:
+            raise Exception("connection failed")
 
     def logout(self):
         """Log out of session
@@ -152,7 +155,7 @@ class Session(object):
         """
         csrf = dict(csrf_param=self.csrf_param, csrf_token=self.csrf_token)
         config2g = dict(enable="false", ID="InternetGatewayDevice.X_Config.Wifi.Radio.1.")
-        data = dict(config5g=config2g)
+        data = dict(config2g=config2g)
         json_data = dict(action="BasicSettings", csrf=csrf, data=data)
 
         r = self.session.post("http://" + self.IP + "/api/ntwk/WlanBasic?showpass=false", json=json_data)
@@ -165,9 +168,30 @@ class Session(object):
         """
         csrf = dict(csrf_param=self.csrf_param, csrf_token=self.csrf_token)
         config2g = dict(enable="true", ID="InternetGatewayDevice.X_Config.Wifi.Radio.1.")
-        data = dict(config5g=config2g)
+        data = dict(config2g=config2g)
         json_data = dict(action="BasicSettings", csrf=csrf, data=data)
 
         r = self.session.post("http://" + self.IP + "/api/ntwk/WlanBasic?showpass=false", json=json_data)
         return self._cleanup(r)
 
+    def reboot(self):
+        """Reboot the Router
+
+        :return: Error code of the response.
+        """
+        r = self.session.get("http://" + self.IP + "/html/advance.html#device_mngt")
+        self._set_csrf(r)
+
+        csrf = dict(csrf_param=self.csrf_param, csrf_token=self.csrf_token)
+        data = dict(csrf=csrf)
+
+        self.session.cookies['activeMenuID'] = "maintain_settings"
+        self.session.cookies['activeSubmenuID'] = "device_mngt"
+
+        r = self.session.post("http://" + self.IP + "/api/service/reboot.cgi", json=data)
+        json_response = json.loads(r.text)
+
+        self.csrf_param = ""
+        self.csrf_token = ""
+        self.session.close()
+        return json_response["errcode"]
