@@ -23,7 +23,7 @@ Bindings for hybridbox-api
 
 ::
 
-    myRouter.rebooot() # note that reboot logs you out
+    myRouter.reboot() # note that reboot logs you out
 
 
 Installation
