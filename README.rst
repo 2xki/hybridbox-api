@@ -46,5 +46,5 @@ Installation
 License
 =======
 
-``hybridbox-api`` is released under the 3-clause BSD license, see ``LICENSE``
+``hybridbox-api`` is released under "THE BEER-WARE LICENSE", see ``LICENSE``
 for details.
